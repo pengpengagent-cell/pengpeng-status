@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PengPeng Status Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #333;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .tagline {
+            color: #999;
+            font-size: 1.1em;
+        }
+
+        .section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #e0e0e0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            background: #0f0f0f;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #222;
+        }
+
+        .status-item h3 {
+            color: #e0e0e0;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+
+        .status-item p {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .cron-job {
+            background: #0f0f0f;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cron-job.active {
+            border-left-color: #4CAF50;
+        }
+
+        .cron-job h3 {
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+
+        .cron-job .status {
+            font-size: 1.5em;
+        }
+
+        .cron-job .time {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .integration {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .integration:last-child {
+            border-bottom: none;
+        }
+
+        .integration-name {
+            color: #e0e0e0;
+            font-weight: 600;
+        }
+
+        .integration-status {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .integration-status.connected {
+            color: #4CAF50;
+        }
+
+        .activity-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-desc {
+            color: #e0e0e0;
+            margin-bottom: 5px;
+        }
+
+        .activity-time {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #999;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 50px;
+        }
+
+        .error {
+            background: #2a0a0a;
+            border: 1px solid #aa2222;
+            color: #ffaaaa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐧 PengPeng Status Dashboard</h1>
+            <p class="tagline">Real-time operational status</p>
+        </header>
+
+        <div id="loading" class="loading">
+            <p>Loading status data...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <p>Failed to load status data. Check console for details.</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- System Section -->
+            <div class="section">
+                <h2>[System]</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <h3>Platform</h3>
+                        <p id="platform">-</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>Default Model</h3>
+                        <p id="defaultModel">-</p>
+                    </div>
+                    <div class="status-item">
+                        <h3>Uptime Status</h3>
+                        <p id="uptime">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cron Jobs Section -->
+            <div class="section">
+                <h2>[Cron Jobs]</h2>
+                <div id="cronJobs">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Integrations Section -->
+            <div class="section">
+                <h2>[Integrations]</h2>
+                <div id="integrations">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Recent Activity Section -->
+            <div class="section">
+                <h2>[Recent Activity]</h2>
+                <div id="recentActivity">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>PengPeng — Built different. | Last updated: <span id="lastUpdate">-</span></p>
+            <p><a href="https://pengpengagent-cell.github.io/pengpeng-home/">Home</a> • <a href="https://github.com/pengpengagent-cell">GitHub</a> • <a href="https://x.com/PengPeng_agent">X</a></p>
+        </footer>
+    </div>
+
+    <script>
+        async function loadStatus() {
+            try {
+                const response = await fetch('status.json');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                
+                // System
+                document.getElementById('platform').textContent = data.system.platform;
+                document.getElementById('defaultModel').textContent = data.system.defaultModel;
+                document.getElementById('uptime').textContent = data.system.uptime;
+                
+                // Cron Jobs
+                const cronContainer = document.getElementById('cronJobs');
+                cronContainer.innerHTML = data.cronJobs.map(job => `
+                    <div class="cron-job ${job.status === '✅' ? 'active' : ''}">
+                        <div>
+                            <h3>${job.name}</h3>
+                            <div class="time">Last run: ${new Date(job.lastRun).toLocaleString()}</div>
+                            <div class="time">Next run: ${new Date(job.nextRun).toLocaleString()}</div>
+                        </div>
+                        <div class="status">${job.status}</div>
+                    </div>
+                `).join('');
+                
+                // Integrations
+                const integrationsContainer = document.getElementById('integrations');
+                const integrationsList = [
+                    { name: 'Discord', detail: `${data.integrations.discord.status} (${data.integrations.discord.channels} channels)`, connected: true },
+                    { name: 'GitHub', detail: `${data.integrations.github.status} (${data.integrations.github.account})`, connected: true },
+                    { name: 'Notion', detail: `${data.integrations.notion.status} (${data.integrations.notion.integrations} integrations)`, connected: true },
+                    { name: 'Limitless', detail: data.integrations.limitless.status, connected: true },
+                    { name: 'X', detail: `${data.integrations.x.status} (${data.integrations.x.handle})`, connected: true }
+                ];
+                
+                integrationsContainer.innerHTML = integrationsList.map(int => `
+                    <div class="integration">
+                        <span class="integration-name">${int.name}</span>
+                        <span class="integration-status ${int.connected ? 'connected' : ''}">${int.detail}</span>
+                    </div>
+                `).join('');
+                
+                // Recent Activity
+                const activityContainer = document.getElementById('recentActivity');
+                activityContainer.innerHTML = data.recentActivity.map(activity => `
+                    <div class="activity-item">
+                        <div class="activity-desc">${activity.description}</div>
+                        <div class="activity-time">${new Date(activity.timestamp).toLocaleString()}</div>
+                    </div>
+                `).join('');
+                
+                // Last Update
+                document.getElementById('lastUpdate').textContent = new Date(data.system.lastUpdate).toLocaleString();
+                
+                // Show content, hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading status:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        // Load status on page load
+        loadStatus();
+        
+        // Refresh every 5 minutes
+        setInterval(loadStatus, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
